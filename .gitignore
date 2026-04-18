@@ -1,0 +1,20 @@
+# Data files
+*.pkl
+!fraud_model.pkl
+!scaler_amount.pkl
+!scaler_time.pkl
+*.csv
+*.zip
+
+# Visualizations
+*.png
+
+# Python environment
+venv/
+__pycache__/
+*.pyc
+
+# IDE files
+.vscode/
+.idea/
+.gemini/

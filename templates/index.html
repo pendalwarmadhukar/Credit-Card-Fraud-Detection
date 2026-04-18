@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudShield AI | Credit Card Fraud Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            background-image: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.1) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-dim);
+            margin-top: 0.5rem;
+        }
+
+        main {
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            main { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .section-title {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            border: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-outline:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            font-size: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .input-group label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .input-group input {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.6rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Results Panel */
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .gauge {
+            width: 250px;
+            height: 125px; /* Half circle */
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gauge-bg {
+            width: 250px;
+            height: 125px;
+            border-top-left-radius: 250px;
+            border-top-right-radius: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .gauge-fill {
+            width: 250px;
+            height: 125px;
+            border-top-left-radius: 250px;
+            border-top-right-radius: 250px;
+            background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: bottom center;
+            transform: rotate(0deg);
+            transition: transform 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+        }
+
+        .gauge-inner {
+            width: 190px;
+            height: 95px;
+            border-top-left-radius: 190px;
+            border-top-right-radius: 190px;
+            background: var(--bg);
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 0.5rem;
+        }
+
+        .gauge-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .gauge-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .risk-badge {
+            margin-top: 1rem;
+            padding: 0.5rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: var(--text-dim);
+        }
+
+        .risk-low { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .risk-medium { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .risk-high { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+
+        .result-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .res-card {
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            border-radius: 1rem;
+        }
+
+        .res-card .label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        .res-card .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        footer {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--glass-border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <header>
+        <h1>FraudShield AI</h1>
+        <p>Advanced Real-time Credit Card Fraud Detection Pipeline</p>
+    </header>
+
+    <main>
+        <!-- Form Section -->
+        <section class="card">
+            <div class="section-title">
+                <h2>Transaction Details</h2>
+                <div class="btn-group">
+                    <button class="btn-outline" onclick="loadSample('legit')">Sample Legit</button>
+                    <button class="btn-outline" onclick="loadSample('fraud')">Sample Fraud</button>
+                </div>
+            </div>
+            
+            <form id="predictionForm">
+                <div class="feature-grid">
+                    <div class="input-group">
+                        <label>Time</label>
+                        <input type="number" step="any" name="Time" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Amount</label>
+                        <input type="number" step="any" name="Amount" value="50.0">
+                    </div>
+                    <!-- V1 to V28 -->
+                    <script>
+                        for(let i=1; i<=28; i++) {
+                            document.write(`
+                                <div class="input-group">
+                                    <label>V${i}</label>
+                                    <input type="number" step="any" name="V${i}" value="0">
+                                </div>
+                            `);
+                        }
+                    </script>
+                </div>
+                <button type="submit" class="btn-primary">ANALYZE TRANSACTION</button>
+            </form>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-panel">
+            <div class="card" style="text-align: center;">
+                <h2 style="margin-bottom: 2rem;">Analysis Result</h2>
+                
+                <div class="gauge-container">
+                    <div class="gauge">
+                        <div class="gauge-bg"></div>
+                        <div id="gaugeFill" class="gauge-fill"></div>
+                        <div class="gauge-inner">
+                            <div id="probValue" class="gauge-value">0%</div>
+                            <div class="gauge-label">Probability</div>
+                        </div>
+                    </div>
+                    <div id="riskBadge" class="risk-badge risk-low">WAITING FOR INPUT</div>
+                </div>
+
+                <div class="result-cards" style="margin-top: 2.5rem;">
+                    <div class="res-card">
+                        <div class="label">Fraud Detected</div>
+                        <div id="fraudResult" class="value">—</div>
+                    </div>
+                    <div class="res-card">
+                        <div class="label">Analysis Confidence</div>
+                        <div id="confidenceResult" class="value">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Product Recommendations</h2>
+                <p id="recommendationText" style="color: var(--text-dim); margin-top: 1rem; line-height: 1.6;">
+                    The system is ready for analysis. Enter transaction parameters to receive a fraud evaluation.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        &copy; 2026 FraudShield AI. Built for production security monitoring.
+    </footer>
+
+    <script>
+        const form = document.getElementById('predictionForm');
+        const gaugeFill = document.getElementById('gaugeFill');
+        const probValue = document.getElementById('probValue');
+        const riskBadge = document.getElementById('riskBadge');
+        const fraudResult = document.getElementById('fraudResult');
+        const confidenceResult = document.getElementById('confidenceResult');
+        const recommendationText = document.getElementById('recommendationText');
+        const loading = document.getElementById('loading');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loading.style.display = 'flex';
+
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => data[key] = parseFloat(value));
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                updateUI(result);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('API Error: check console for details');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function updateUI(res) {
+            // Update Gauge
+            const prob = res.fraud_probability;
+            const percentage = Math.round(prob * 100);
+            
+            // Rotation mapping: 0% = -90deg, 100% = 90deg
+            const rotation = (prob * 180) - 90;
+            gaugeFill.style.transform = `rotate(${rotation}deg)`;
+            probValue.innerText = `${percentage}%`;
+
+            // Update Badge & Status
+            riskBadge.innerText = `${res.risk_level} RISK`;
+            riskBadge.className = 'risk-badge';
+            
+            if(res.risk_level === 'LOW') {
+                riskBadge.classList.add('risk-low');
+                fraudResult.innerText = 'No';
+                fraudResult.style.color = 'var(--success)';
+                recommendationText.innerText = "Transaction appears legitimate. Recommended Action: Approve.";
+            } else if(res.risk_level === 'MEDIUM') {
+                riskBadge.classList.add('risk-medium');
+                fraudResult.innerText = 'Suspicious';
+                fraudResult.style.color = 'var(--warning)';
+                recommendationText.innerText = "Transaction flagged as suspicious. Recommended Action: Request MFA or Manual Review.";
+            } else {
+                riskBadge.classList.add('risk-high');
+                fraudResult.innerText = 'Yes';
+                fraudResult.style.color = 'var(--danger)';
+                recommendationText.innerText = "Transaction highly likely to be fraudulent. Recommended Action: Block and notify user immediately.";
+            }
+
+            confidenceResult.innerText = `${(100 - (Math.abs(prob - 0.5) * 50)).toFixed(1)}%`;
+        }
+
+        function loadSample(type) {
+            const samples = {
+                legit: {
+                    Time: 1000, Amount: 150.5, V1: -1.35, V2: -0.07, V3: 2.32, V4: 0.53, V5: -0.4, V6: 0.1, V7: -0.2, V8: 0.0, V9: -0.1, V10: -0.5, V11: 0.1, V12: -0.6, V13: 1.0, V14: -0.4, V15: 0.5, V16: -0.2, V17: -0.1, V18: 0.2, V19: 0.3, V20: -0.1, V21: -0.1, V22: -0.2, V23: -0.3, V24: 0.4, V25: 0.1, V26: -0.1, V27: 0.0, V28: 0.0
+                },
+                fraud: {
+                    Time: 500, Amount: 99.99, V1: -2.3, V2: 1.5, V3: -3.4, V4: 2.1, V5: -1.2, V6: -0.8, V7: -2.5, V8: 0.5, V9: -1.8, V10: -2.3, V11: 1.4, V12: -2.8, V13: -0.2, V14: -3.5, V15: 0.1, V16: -1.2, V17: -3.1, V18: -1.0, V19: 0.4, V20: 0.2, V21: 0.4, V22: -0.1, V23: -0.2, V24: -0.3, V25: 0.1, V26: 0.2, V27: 0.4, V28: 0.1
+                }
+            };
+
+            const data = samples[type];
+            for (const key in data) {
+                const input = document.querySelector(`input[name="${key}"]`);
+                if(input) input.value = data[key];
+            }
+            riskBadge.innerText = "SAMPLE LOADED";
+            riskBadge.className = "risk-badge";
+        }
+    </script>
+</body>
+</html>
